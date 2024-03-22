@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-
+import Model from './Model';
 const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
     const [moveCount, setMoveCount] = useState(0);
     const [selectedShape, setSelectedShape] = useState(null);
     const [grid, setGrid] = useState([]);// State to store the grid of shapes
-
+    const [isWin, setIsWin] = useState(false); 
+    
     useEffect(() => {
         createGrid();
     }, []);
@@ -23,7 +24,7 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
         }
         return colors;
     }
-    
+
     // Function to shuffle an array
     const shuffleArray = array => {
         for (let i = array.length - 1; i > 0; i--) {
@@ -46,21 +47,22 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
         setGrid(newGrid);
     };
 
+
+
     // Function to handle shape click and swap colors
     function handleShapeClick(shape) {
         if (selectedShape && selectedShape !== shape) {
-            // Swap colors between the selected shape and the clicked shape
             const tempColor = { ...selectedShape };
             selectedShape.r = shape.r;
             selectedShape.g = shape.g;
             selectedShape.b = shape.b;
             selectedShape.a = shape.a;
-    
+
             shape.r = tempColor.r;
             shape.g = tempColor.g;
             shape.b = tempColor.b;
             shape.a = tempColor.a;
-            
+
             setSelectedShape(null);
             setMoveCount(prevCount => prevCount + 1);
             checkWin();
@@ -86,41 +88,49 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
             const color = shape;
             rows[row][col] = color;
         });
-        
-        const gradientDirection = rows[0][0].a < rows[0][gridSize - 1].a ? "left-to-right" : "right-to-left";
+
+        const Direction = rows[0][0].a < rows[0][gridSize - 1].a ? "left-to-right" : "right-to-left";
         const isOrdered = rows.every(row => {
-            if (gradientDirection === "left-to-right") {
+            if (Direction === "left-to-right") {
                 return row.every((color, index) => {
-                    if (index === 0) return true; 
-                    return color.a >= row[index - 1].a; 
+                    if (index === 0) return true;
+                    return color.a >= row[index - 1].a;
                 });
             } else {
                 return row.every((color, index) => {
-                    if (index === 0) return true; 
-                    return color.a <= row[index - 1].a; 
+                    if (index === 0) return true;
+                    return color.a <= row[index - 1].a;
                 });
             }
         });
 
         if (isOrdered) {
-            alert("You win in " + moveCount + " moves");
-            resetGame();
+            setIsWin(true);
         }
     }
+    const closeModal = () => {
+        setIsWin(false);
+        resetGame();
+    };
 
     return (
-        <div id="container">
-            {grid.map((shape) => (
-                <div
-                    key={shape.id}
-                    className={`shape ${selectedShape && selectedShape.id === shape.id ? 'selectedShape' : ''}`}
-                    style={{ backgroundColor: `rgba(${shape.r}, ${shape.g}, ${shape.b}, ${shape.a})` }}
-                    onClick={() => handleShapeClick(shape)}
-                />
-            ))}
-            <div>Move Count: {moveCount}</div>
-            <button id="resetBtn" onClick={resetGame}>Reset</button>
+        <div className='game'>
+            <div id="container">
+                <h1>Move Count: {moveCount}</h1>
+                <div className='colors'>
+                    {grid.map((shape) => (
+                        <div
+                            key={shape.id}
+                            className={`shape ${selectedShape && selectedShape.id === shape.id ? 'selected' : ''}`}
+                            style={{ backgroundColor: `rgba(${shape.r}, ${shape.g}, ${shape.b}, ${shape.a})` }}
+                            onClick={() => handleShapeClick(shape)}
+                        />
+                    ))}
+                </div>
+                <button id="resetBtn" onClick={resetGame}>Reset</button>
+            </div>
+            {isWin && <Model moveCount={moveCount} onClose={closeModal} />} {/* Render the modal if win state is true */}
         </div>
     );
-}
+};
 export default ColorGrid;
