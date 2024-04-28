@@ -94,12 +94,12 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
             if (Direction === "left-to-right") {
                 return row.every((color, index) => {
                     if (index === 0) return true;
-                    return color.a >= row[index - 1].a;
+                    return color.a >= row[index - 1].a && color.r == row[index - 1].r && color.g == row[index - 1].g && color.b == row[index - 1].b;
                 });
             } else {
                 return row.every((color, index) => {
                     if (index === 0) return true;
-                    return color.a <= row[index - 1].a;
+                    return color.a <= row[index - 1].a && color.r == row[index - 1].r && color.g == row[index - 1].g && color.b == row[index - 1].b;
                 });
             }
         });
