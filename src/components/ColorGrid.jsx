@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Model from './Model';
-const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
+
+const ColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
     const [moveCount, setMoveCount] = useState(0);
     const [selectedShape, setSelectedShape] = useState(null);
-    const [grid, setGrid] = useState([]);// State to store the grid of shapes
-    const [isWin, setIsWin] = useState(false); 
-    
+    const [grid, setGrid] = useState([]);
+    const [isWin, setIsWin] = useState(false);
+
     useEffect(() => {
         createGrid();
     }, []);
 
-    //generate random colors with different opacities
-    function generateRandomColors(numColors, numOpacities) {
+    const generateRandomColors = (numColors, numOpacities) => {
         const colors = [];
         for (let i = 0; i < numColors; i++) {
-            const baseColor = [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)];// Generate a base color with random RGB values
+            const baseColor = [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)];
             const colorOpacities = [];
             for (let j = 0; j < numOpacities; j++) {
                 const opacity = (j + 1) * (1 / (numOpacities + 1));
@@ -23,16 +23,15 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
             colors.push(colorOpacities);
         }
         return colors;
-    }
+    };
 
-    // Function to shuffle an array
-    const shuffleArray = array => {
+    const shuffleArray = (array) => {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
         return array;
-    }
+    };
 
     const createGrid = () => {
         const opacities = generateRandomColors(gridSize, numOpacitiesPerColor);
@@ -47,10 +46,7 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
         setGrid(newGrid);
     };
 
-
-
-    // Function to handle shape click and swap colors
-    function handleShapeClick(shape) {
+    const handleShapeClick = (shape) => {
         if (selectedShape && selectedShape !== shape) {
             const tempColor = { ...selectedShape };
             selectedShape.r = shape.r;
@@ -71,14 +67,13 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
         } else {
             setSelectedShape(shape);
         }
-    }
+    };
 
     const resetGame = () => {
         setMoveCount(0);
         setSelectedShape(null);
         createGrid();
-    }
-
+    };
 
     const checkWin = () => {
         const rows = Array.from({ length: gridSize }, () => []);
@@ -94,12 +89,12 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
             if (Direction === "left-to-right") {
                 return row.every((color, index) => {
                     if (index === 0) return true;
-                    return color.a >= row[index - 1].a && color.r == row[index - 1].r && color.g == row[index - 1].g && color.b == row[index - 1].b;
+                    return color.a >= row[index - 1].a && color.r === row[index - 1].r && color.g === row[index - 1].g && color.b === row[index - 1].b;
                 });
             } else {
                 return row.every((color, index) => {
                     if (index === 0) return true;
-                    return color.a <= row[index - 1].a && color.r == row[index - 1].r && color.g == row[index - 1].g && color.b == row[index - 1].b;
+                    return color.a <= row[index - 1].a && color.r === row[index - 1].r && color.g === row[index - 1].g && color.b === row[index - 1].b;
                 });
             }
         });
@@ -107,11 +102,62 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
         if (isOrdered) {
             setIsWin(true);
         }
-    }
+
+        return isOrdered;
+    };
+
     const closeModal = () => {
         setIsWin(false);
         resetGame();
     };
+
+    const solvePuzzle = async () => {
+        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    
+        const solve = async (currentGrid, depth) => {
+            if (isWin || depth === 0) return false;
+    
+            for (let i = 0; i < currentGrid.length; i++) {
+                for (let j = i + 1; j < currentGrid.length; j++) {
+                    const temp = { ...currentGrid[i] };
+                    currentGrid[i] = { ...currentGrid[j] };
+                    currentGrid[j] = { ...temp };
+    
+                    setGrid([...currentGrid]);
+                    setMoveCount((prevCount) => prevCount + 1);
+    
+                    await delay(500);
+    
+                    if (checkWin()) {
+                        setIsWin(true);
+                        return true;
+                    }
+    
+                    const solved = await solve([...currentGrid], depth - 1);
+                    if (solved) return true;
+    
+                    const tempUndo = { ...currentGrid[i] };
+                    currentGrid[i] = { ...currentGrid[j] };
+                    currentGrid[j] = { ...tempUndo };
+    
+                    setGrid([...currentGrid]);
+                    setMoveCount((prevCount) => prevCount - 1);
+    
+                    await delay(10);
+                }
+            }
+    
+            return false;
+        };
+    
+        await solve([...grid], 50); // Limit the depth of the search
+    };
+    
+    
+
+    useEffect(() => {
+        solvePuzzle();
+    }, []); // Solve puzzle automatically when component mounts
 
     return (
         <div className='game'>
@@ -129,8 +175,9 @@ const ColorGrid = ({ gridSize = 4, numOpacitiesPerColor = 4 }) => {
                 </div>
                 <button id="resetBtn" onClick={resetGame}>Reset</button>
             </div>
-            {isWin && <Model moveCount={moveCount} onClose={closeModal} />} {/* Render the modal if win state is true */}
+            {isWin && <Model moveCount={moveCount} onClose={closeModal} />}
         </div>
     );
 };
+
 export default ColorGrid;

@@ -17,7 +17,7 @@ main {
 .colors {
     background-color: transparent;
     display: grid;
-    grid-template-columns: repeat(4, 95px);
+    grid-template-columns: repeat(3, 95px);
     grid-gap: 1px;
     justify-content: center;
     align-items: center;

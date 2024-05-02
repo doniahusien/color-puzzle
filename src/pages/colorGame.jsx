@@ -1,9 +1,9 @@
 import React from 'react'
-import ColorGrid from '@/components/ColorGrid'
+import AColorGrid from '@/components/AColorGrid'
 const colorGame = () => {
   return (
       <div>
-          <ColorGrid />
+          <AColorGrid />
     </div>
   )
 }
