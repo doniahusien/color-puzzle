@@ -3,17 +3,13 @@ import Model from './Model';
 
 class Node {
     constructor(grid, depth, gridSize, parent = null, cost = 0) {
-        this.grid = grid; 
-        this.depth = depth; 
+        this.grid = grid;
+        this.depth = depth;
         this.parent = parent;
         this.cost = cost;
-        this.gridSize = gridSize; 
+        this.gridSize = gridSize;
         this.h = this.calculateHeuristic();
-        this.g = this.depth; 
-    }
-    
-    get f() {
-        return this.cost + this.h;
+        this.g = this.depth;
     }
 
     isSolution() {
@@ -23,7 +19,7 @@ class Node {
             if (a.b !== b.b) return a.b - b.b;
             return a.a - b.a;
         });
-        
+
         return this.grid.every((shape, index) => {
             const goalShape = goalState[index];
             return (
@@ -52,16 +48,13 @@ class Node {
     getSuccessors() {
         const successors = [];
         const visitedStates = new Set();
-    
         for (let i = 0; i < this.grid.length; i++) {
             const childGrid = [...this.grid];
-            const temp = childGrid.splice(i, 1)[0]; // Remove the shape at index i
-    
+            const temp = childGrid.splice(i, 1)[0];
             for (let j = 0; j < this.grid.length; j++) {
                 if (i !== j) {
                     const newGrid = [...childGrid.slice(0, j), temp, ...childGrid.slice(j)];
                     const newState = JSON.stringify(newGrid);
-    
                     if (!visitedStates.has(newState)) {
                         successors.push(new Node(newGrid, this.depth + 1, this.gridSize, this, this.cost + 1));
                         visitedStates.add(newState);
@@ -69,12 +62,12 @@ class Node {
                 }
             }
         }
-    
+
         return successors;
     }
 }
 
-const AColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
+const AColorGrid = ({ gridSize = 5, numOpacitiesPerColor = 5 }) => {
     const [moveCount, setMoveCount] = useState(0);
     const [selectedShape, setSelectedShape] = useState(null);
     const [grid, setGrid] = useState([]);
@@ -84,13 +77,21 @@ const AColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
         createGrid();
     }, []);
 
-    const shuffleArray = array => {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
+
+    const generateRandomColors = (numColors, numOpacities) => {
+        const colors = [];
+        for (let i = 0; i < numColors; i++) {
+            const baseColor = [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)];
+            const colorOpacities = [];
+            for (let j = 0; j < numOpacities; j++) {
+                const opacity = (j + 1) * (1 / (numOpacities + 1));
+                colorOpacities.push([...baseColor, opacity]);
+            }
+            colors.push(colorOpacities);
         }
-        return array;
+        return colors;
     }
+
 
     const createGrid = () => {
         const opacities = generateRandomColors(gridSize, numOpacitiesPerColor);
@@ -104,6 +105,14 @@ const AColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
         }));
         setGrid(newGrid);
     };
+
+    const shuffleArray = array => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
 
     const handleShapeClick = (shape) => {
         if (selectedShape && selectedShape !== shape) {
@@ -135,7 +144,6 @@ const AColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
     }
 
     const checkWin = () => {
-        console.log("Checking win condition...");
         const rows = Array.from({ length: gridSize }, () => []);
         grid.forEach(shape => {
             const row = parseInt(shape.id / gridSize);
@@ -159,7 +167,6 @@ const AColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
             }
         });
         if (isOrdered) {
-            console.log("Win condition met!");
             setIsWin(true);
         }
     }
@@ -169,33 +176,20 @@ const AColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
         resetGame();
     };
 
-    const generateRandomColors = (numColors, numOpacities) => {
-        const colors = [];
-        for (let i = 0; i < numColors; i++) {
-            const baseColor = [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)];
-            const colorOpacities = [];
-            for (let j = 0; j < numOpacities; j++) {
-                const opacity = (j + 1) * (1 / (numOpacities + 1));
-                colorOpacities.push([...baseColor, opacity]);
-            }
-            colors.push(colorOpacities);
-        }
-        return colors;
-    }
 
     const solveGame = () => {
-        const maxDepth = 700; 
+        const maxDepth = 700;
         const initialNode = new Node(grid, 0, gridSize);
-        let stack = [initialNode]; 
+        let stack = [initialNode];
         const visited = new Set();
         let depth = 0;
-    
+
         const search = () => {
             while (stack.length > 0 && depth < maxDepth) {
                 const currentNode = stack.pop();
-                visited.add(JSON.stringify(currentNode.grid)); 
-                depth++; 
-    
+                visited.add(JSON.stringify(currentNode.grid));
+                depth++;
+
                 if (currentNode.isSolution()) {
                     const path = [];
                     let current = currentNode;
@@ -203,12 +197,13 @@ const AColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
                         path.unshift(current);
                         current = current.parent;
                     }
-    
+                    let currentPosition = 0;
                     if (path.length > 1) {
-                        const nextMove = path[1];
+                        const nextMove = path[currentPosition];
                         setGrid(nextMove.grid);
                         setMoveCount(moveCount + 1);
                         checkWin();
+                        currentPosition++;
                         return;
                     }
                 }
@@ -217,16 +212,13 @@ const AColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
                     const gridString = JSON.stringify(successor.grid);
                     return !visited.has(gridString) && successor.depth < maxDepth;
                 });
-    
-                // Add unvisited successors to the stack
                 stack.push(...unvisitedSuccessors);
             }
-        console.log("No solution found within maxDepth.");
+            console.log("No solution found within maxDepth.");
         };
-    
-        setTimeout(search, 0); 
+        setTimeout(search, 2000);
     };
-    
+
     return (
         <div className='game'>
             <div id="container">
@@ -241,8 +233,10 @@ const AColorGrid = ({ gridSize = 3, numOpacitiesPerColor = 3 }) => {
                         />
                     ))}
                 </div>
-                <button id="resetBtn" onClick={resetGame}>Reset</button>
-                <button id="solveBtn" onClick={solveGame}>Hint</button>
+                <div className='btns'>
+                    <button id="resetBtn" onClick={resetGame}>Reset</button>
+                    <button id="hintBtn" onClick={solveGame}>Hint</button>
+                </div>
             </div>
             {isWin && <Model moveCount={moveCount} onClose={closeModal} />}
         </div>
